@@ -1,7 +1,11 @@
 # Assets synty paids
 
+Assets/PolygonDungeon
+Assets/PolygonDungeon.meta
 Assets/PolygonDungeonMap
 Assets/PolygonDungeonMap.meta
+Assets/Synty
+Assets/Synty.meta
 
 # This .gitignore file should be placed at the root of your Unity project directory
 #
