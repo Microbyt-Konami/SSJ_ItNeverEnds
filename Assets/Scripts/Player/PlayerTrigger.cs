@@ -6,15 +6,19 @@ using UnityEngine;
 
 public class PlayerTrigger : MonoBehaviour
 {
-    [SerializeField]
-    private InputReader _inputReader;
+    [SerializeField] private InputReader _inputReader;
 
     private bool _isTriggered = false;
     private UseTrigger _currentUseTrigger;
 
-    private void Start()
+    private void OnEnable()
     {
         _inputReader.onUsePerformed += UseOn;
+    }
+
+    private void OnDisable()
+    {
+        _inputReader.onUsePerformed -= UseOn;
     }
 
     private void OnTriggerEnter(Collider other)
