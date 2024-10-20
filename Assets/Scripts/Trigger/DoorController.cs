@@ -1,25 +1,44 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public enum DoorState
 {
     Close, CloseToOpen, Open, OpenToClose
 }
 
+[RequireComponent(typeof(AudioSource))]
 public class DoorController : MonoBehaviour
 {
+    /*
+        OpenIni: angleOpenInit
+        OpenEnd: angleCloseInit
+        CloseIni: angleEnd = angleOpenInit
+        CloseEnd: angleEnd = angleOpenInit
+    */
     [SerializeField] private float angleOpenInit = 180;
     [SerializeField] private float angleCloseInit = 72;
     [SerializeField] private float timeMovement = 1f;
     [SerializeField] private bool isOpening;
+    [SerializeField] private bool inMovement;
+    [SerializeField] private AudioClip audioOpen;
+    [SerializeField] private AudioClip audioClose;
     [field: SerializeField, Header("Debug")] public DoorState DoorState { get; private set; }
 
     private Transform doorTransform;
+    private AudioSource audioSource;
+    private Coroutine movementCoroutine;
+
+    public UnityEvent OnMovementBegin;
+    public UnityEvent OnMovementEnd;
 
     private void Awake()
     {
         doorTransform = GetComponent<Transform>();
+        audioSource = GetComponent<AudioSource>();
+        audioSource.loop = false;
+        audioSource.playOnAwake = false;
         SetUp();
     }
 
@@ -50,18 +69,24 @@ public class DoorController : MonoBehaviour
 
     public void Open()
     {
-        if (!isOpening)
-            isOpening = true;
+        if (audioClose != null)
+        {
+            audioSource.clip = audioOpen;
+            audioSource.Play();
+        }
 
-        Movement();
+        Movement(DoorState.Open);
     }
 
     public void Close()
     {
-        if (isOpening)
-            isOpening = false;
+        if (audioOpen != null)
+        {
+            audioSource.clip = audioClose;
+            audioSource.Play();
+        }
 
-        Movement();
+        Movement(DoorState.Close);
     }
 
     private void OnValidate()
@@ -69,44 +94,105 @@ public class DoorController : MonoBehaviour
         SetUp();
     }
 
-    private void Movement()
+    private void Movement(DoorState doorStateEnd)
     {
         float angleInit = doorTransform.localEulerAngles.y;
-        float angleEnd = (isOpening) ? angleCloseInit : angleOpenInit;
-        StartCoroutine(OpeningOrCloseCoRoutine(angleInit, angleEnd));
+        float angleEnd;
+
+        switch (doorStateEnd)
+        {
+            case DoorState.Open:
+                // OpenEnd
+                angleEnd = angleCloseInit;
+                break;
+            case DoorState.Close:
+            default:
+                // CloseEnd
+                angleEnd = angleOpenInit;
+                break;
+        }
+
+        if (movementCoroutine != null)
+            StopMovement();
+
+        movementCoroutine = StartCoroutine(MovementCoRoutine(angleInit, angleEnd, doorStateEnd));
     }
 
-    private IEnumerator OpeningOrCloseCoRoutine(float angleInit, float angleEnd)
+    private void StopMovement()
     {
-        if (angleInit == angleEnd)
-            yield break;
+        StopCoroutine(movementCoroutine);
+        movementCoroutine = null;
+        OnMovementEnd.Invoke();
+    }
 
-        float time;
-        if (angleInit < angleEnd)
+    private IEnumerator MovementCoRoutine(float angleInit, float angleEnd, DoorState doorState)
+    {
+        inMovement = true;
+        OnMovementBegin.Invoke();
+        switch (doorState)
         {
-            time = 0;
-            while (time < timeMovement)
-            {
-                time += Time.deltaTime;
-                float angle = Mathf.Lerp(angleInit, angleEnd, time / timeMovement);
-                doorTransform.localEulerAngles = new Vector3(doorTransform.localEulerAngles.x, angle, doorTransform.localEulerAngles.z);
+            case DoorState.Open:
+                switch (DoorState)
+                {
+                    case DoorState.Close:
+                        isOpening = true;
+                        DoorState = DoorState.CloseToOpen;
+                        break;
+                    case DoorState.OpenToClose:
+                        DoorState = DoorState.CloseToOpen;
+                        break;
+                    case DoorState.Open:
+                    case DoorState.CloseToOpen:
+                        break;
+                }
+                break;
+            case DoorState.Close:
+                switch (DoorState)
+                {
+                    case DoorState.Open:
+                    case DoorState.CloseToOpen:
+                        DoorState = DoorState.OpenToClose;
+                        break;
+                    case DoorState.Close:
+                    case DoorState.OpenToClose:
+                        break;
+                }
+                break;
+        }
 
-                yield return null;
+        if (angleInit != angleEnd)
+        {
+            float time;
+            if (angleInit < angleEnd)
+            {
+                time = 0;
+                while (time < timeMovement)
+                {
+                    time += Time.deltaTime;
+                    float angle = Mathf.Lerp(angleInit, angleEnd, time / timeMovement);
+                    doorTransform.localEulerAngles = new Vector3(doorTransform.localEulerAngles.x, angle, doorTransform.localEulerAngles.z);
+
+                    yield return null;
+                }
+            }
+            else
+            {
+                time = timeMovement;
+                while (time > 0)
+                {
+                    time -= Time.deltaTime;
+                    float angle = Mathf.Lerp(angleEnd, angleInit, time / timeMovement);
+                    doorTransform.localEulerAngles = new Vector3(doorTransform.localEulerAngles.x, angle, doorTransform.localEulerAngles.z);
+
+                    yield return null;
+                }
             }
         }
-        else
-        {
-            time = timeMovement;
-            while (time > 0)
-            {
-                time -= Time.deltaTime;
-                float angle = Mathf.Lerp(angleEnd, angleInit, time / timeMovement);
-                doorTransform.localEulerAngles = new Vector3(doorTransform.localEulerAngles.x, angle, doorTransform.localEulerAngles.z);
 
-                yield return null;
-            }
-        }
-
-        isOpening = !isOpening;
+        isOpening = false;
+        inMovement = false;
+        DoorState = doorState;
+        movementCoroutine = null;
+        OnMovementEnd.Invoke();
     }
 }
