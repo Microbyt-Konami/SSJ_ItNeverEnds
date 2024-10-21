@@ -343,6 +343,12 @@ namespace Synty.AnimationBaseLocomotion.Samples
         #region Properties
         public bool IsSprinting => _isSprinting;
 
+        public bool IsStopped { get => _isStopped; set => _isStopped = value; }
+        public bool IsGrounded { get => _isGrounded; set => _isGrounded = value; }
+        public bool IsStarting { get => _isStarting; set => _isStarting = value; }
+        public bool MovementInputTapped { get => _movementInputTapped; set => _movementInputTapped = value; }
+        public bool MovementInputHeld { get => _movementInputHeld; set => _movementInputHeld = value; }
+
         #endregion
 
         #region Start
@@ -1370,7 +1376,7 @@ namespace Synty.AnimationBaseLocomotion.Samples
             FaceMoveDirection();
             Move();
             UpdateAnimatorController();
-            if (_velocity != Vector3.zero)
+            if (!_isStopped && _isGrounded && !_movementInputTapped && _movementInputHeld)
                 OnWalking.Invoke();
         }
 

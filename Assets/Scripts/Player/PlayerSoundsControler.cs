@@ -1,5 +1,6 @@
 using Synty.AnimationBaseLocomotion.Samples;
 using Synty.AnimationBaseLocomotion.Samples.InputSystem;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,6 +15,7 @@ public class PlayerSoundsControler : MonoBehaviour
 
     private PlayerController playerController;
     private AudioSource audioSource;
+    private bool isStepSound, isJumpSound;
 
     private void Awake()
     {
@@ -37,15 +39,49 @@ public class PlayerSoundsControler : MonoBehaviour
 
     private void PlayStepSound()
     {
-        audioSource.clip = playerController.IsSprinting ? footRunSound : footWalkSound;
-        if (audioSource.clip != null)
-            audioSource.Play();
+        var clip = playerController.IsSprinting ? footRunSound : footWalkSound;
+
+        PlayFootSound(clip, true);
     }
 
     private void PlayJumpSound()
     {
-        audioSource.clip = footJumpSound;
-        if (audioSource.clip != null)
-            audioSource.Play();
+        PlayFootSound(footJumpSound, false);
+    }
+
+    private void PlayFootSound(AudioClip clip, bool isStep)
+    {
+        StartCoroutine(PlayFootSoundCoroutine(clip, isStep));
+    }
+
+    private IEnumerator PlayFootSoundCoroutine(AudioClip clip, bool isStep)
+    {
+        if (audioSource.isPlaying)
+        {
+            if (isStep)
+            {
+                if (isStepSound)
+                    yield break;
+            }
+            else
+            {
+                if (isJumpSound)
+                    yield break;
+            }
+
+            yield return new WaitUntil(() => !audioSource.isPlaying);
+        }
+
+        if (isStep)
+            isStepSound = true;
+        else
+            isJumpSound = true;
+        audioSource.clip = clip;
+        audioSource.Play();
+        yield return new WaitUntil(() => !audioSource.isPlaying);
+        if (isStep)
+            isStepSound = false;
+        else
+            isJumpSound = false;
     }
 }
