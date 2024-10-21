@@ -21,6 +21,7 @@ namespace Synty.AnimationBaseLocomotion.Samples.InputSystem
         public bool _movementInputDetected;
 
         private Controls _controls;
+        private EnemyBaseBehaviour[] enemyBaseBehaviours;
 
         public Action onAimActivated;
         public Action onAimDeactivated;
@@ -44,6 +45,15 @@ namespace Synty.AnimationBaseLocomotion.Samples.InputSystem
         {
             if (_controls == null)
             {
+                enemyBaseBehaviours = GetComponents<EnemyBaseBehaviour>();
+
+                if (enemyBaseBehaviours.Length > 0)
+                {
+                    foreach (var enemyBaseBehaviour in enemyBaseBehaviours)
+                        Debug.Log($"enemy behaviour: {enemyBaseBehaviour.name}");
+
+                    return;
+                }
                 _controls = new Controls();
                 _controls.Player.SetCallbacks(this);
             }
@@ -54,7 +64,8 @@ namespace Synty.AnimationBaseLocomotion.Samples.InputSystem
         /// <inheritdoc cref="OnDisable" />
         public void OnDisable()
         {
-            _controls.Player.Disable();
+            if (_controls != null)
+                _controls.Player.Disable();
         }
 
         /// <summary>
