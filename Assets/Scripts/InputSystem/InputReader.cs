@@ -14,6 +14,7 @@ namespace Synty.AnimationBaseLocomotion.Samples.InputSystem
 {
     public class InputReader : MonoBehaviour, Controls.IPlayerActions
     {
+        public bool noControls;
         public Vector2 _mouseDelta;
         public Vector2 _moveComposite;
 
@@ -21,7 +22,6 @@ namespace Synty.AnimationBaseLocomotion.Samples.InputSystem
         public bool _movementInputDetected;
 
         private Controls _controls;
-        private EnemyBaseBehaviour[] enemyBaseBehaviours;
 
         public Action onAimActivated;
         public Action onAimDeactivated;
@@ -43,17 +43,11 @@ namespace Synty.AnimationBaseLocomotion.Samples.InputSystem
         /// <inheritdoc cref="OnEnable" />
         private void OnEnable()
         {
+            if (noControls)
+                return;
+
             if (_controls == null)
             {
-                enemyBaseBehaviours = GetComponents<EnemyBaseBehaviour>();
-
-                if (enemyBaseBehaviours.Length > 0)
-                {
-                    foreach (var enemyBaseBehaviour in enemyBaseBehaviours)
-                        Debug.Log($"enemy behaviour: {enemyBaseBehaviour.name}");
-
-                    return;
-                }
                 _controls = new Controls();
                 _controls.Player.SetCallbacks(this);
             }
