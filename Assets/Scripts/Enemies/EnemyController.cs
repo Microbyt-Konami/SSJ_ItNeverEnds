@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Windows;
 
+[RequireComponent(typeof(CharacterController))]
 public class EnemyController : MonoBehaviour
 {
     [Header("Enemy")]
@@ -18,10 +19,6 @@ public class EnemyController : MonoBehaviour
 
     [Tooltip("Acceleration and deceleration")]
     public float SpeedChangeRate = 10.0f;
-
-    public AudioClip LandingAudioClip;
-    public AudioClip[] FootstepAudioClips;
-    [Range(0, 1)] public float FootstepAudioVolume = 0.5f;
 
     [Space(10)]
     [Tooltip("The height the enemy can jump")]
@@ -82,11 +79,11 @@ public class EnemyController : MonoBehaviour
 
     private void Awake()
     {
-        if (_animator == null)
-        {
-            _enemyObject = GetComponentInChildren<Animator>().gameObject;
-            _hasAnimator = _enemyObject.TryGetComponent(out _animator);
-        }
+        _animator = GetComponentInChildren<Animator>();
+
+        _hasAnimator = _animator != null;
+        if (_hasAnimator)
+            _enemyObject = _animator.gameObject;
     }
 
     private void Start()
@@ -99,6 +96,8 @@ public class EnemyController : MonoBehaviour
         // reset our timeouts on start
         _jumpTimeoutDelta = JumpTimeout;
         _fallTimeoutDelta = FallTimeout;
+
+        StartCoroutine(DoMovement());
     }
 
     private void Update()
@@ -107,6 +106,32 @@ public class EnemyController : MonoBehaviour
         JumpAndGravity();
         GroundedCheck();
         Move();
+    }
+
+    private IEnumerator DoMovement()
+    {
+        while (true)
+        {
+            /*
+            yield return new WaitForSeconds(1f);
+            StartMove(Vector2.up);
+            yield return new WaitForSeconds(3f);
+            StopMove();
+            Rotate(Vector2.right);
+            StartMove(Vector2.down);
+            yield return new WaitForSeconds(3f);
+            StopMove();
+            */
+            if (Random.value > 0.5f)
+            {
+                var direction = new Vector2(Random.Range(-1f, 1f), Random.Range(-1f, 1f)).normalized;
+                var time = Random.Range(3f, 10f);
+
+                StartMove(direction);
+                yield return new WaitForSeconds(3f);
+                StopMove();
+            }
+        }
     }
 
     private void AssignAnimationIDs()
@@ -290,26 +315,6 @@ public class EnemyController : MonoBehaviour
         Gizmos.DrawSphere(
             new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z),
             GroundedRadius);
-    }
-
-    private void OnFootstep(AnimationEvent animationEvent)
-    {
-        if (animationEvent.animatorClipInfo.weight > 0.5f)
-        {
-            if (FootstepAudioClips.Length > 0)
-            {
-                var index = Random.Range(0, FootstepAudioClips.Length);
-                AudioSource.PlayClipAtPoint(FootstepAudioClips[index], transform.TransformPoint(_controller.center), FootstepAudioVolume);
-            }
-        }
-    }
-
-    private void OnLand(AnimationEvent animationEvent)
-    {
-        if (animationEvent.animatorClipInfo.weight > 0.5f)
-        {
-            AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(_controller.center), FootstepAudioVolume);
-        }
     }
 
     public void StartMove(Vector2 direction)
