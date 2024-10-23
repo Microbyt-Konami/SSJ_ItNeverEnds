@@ -3,6 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Windows;
 
+public enum EnemyState
+{
+    Idle,
+    Wandering,
+    FollowToTarjet
+}
+
 [RequireComponent(typeof(CharacterController))]
 public class EnemyController : MonoBehaviour
 {
@@ -12,6 +19,9 @@ public class EnemyController : MonoBehaviour
 
     [Tooltip("Sprint speed of the character in m/s")]
     public float SprintSpeed = 5.335f;
+
+    [Tooltip("speed of round the character in m/s")]
+    public float followSpeed = 0.1f;
 
     [Tooltip("How fast the character turns to face movement direction")]
     [Range(0.0f, 0.3f)]
@@ -46,6 +56,10 @@ public class EnemyController : MonoBehaviour
 
     [Tooltip("What layers the character uses as ground")]
     public LayerMask GroundLayers;
+
+    [Header("Debug")]
+    [SerializeField] private EnemyState _enemyState = EnemyState.Idle;
+    [SerializeField] private GameObject _target = null;
 
     // Enemy
     private float _speed;
@@ -97,7 +111,10 @@ public class EnemyController : MonoBehaviour
         _jumpTimeoutDelta = JumpTimeout;
         _fallTimeoutDelta = FallTimeout;
 
-        StartCoroutine(DoMovement());
+        //StartCoroutine(WanderingCourotine());
+        _enemyState = EnemyState.FollowToTarjet;
+        _target = GameObject.FindGameObjectWithTag("Player");
+        StartCoroutine(FollowTargetCourotine());
     }
 
     private void Update()
@@ -108,29 +125,44 @@ public class EnemyController : MonoBehaviour
         Move();
     }
 
-    private IEnumerator DoMovement()
+    private IEnumerator WanderingCourotine()
     {
         while (true)
         {
-            /*
-            yield return new WaitForSeconds(1f);
-            StartMove(Vector2.up);
-            yield return new WaitForSeconds(3f);
-            StopMove();
-            Rotate(Vector2.right);
-            StartMove(Vector2.down);
-            yield return new WaitForSeconds(3f);
-            StopMove();
-            */
-            if (Random.value > 0.5f)
+            yield return new WaitUntil(() => _enemyState == EnemyState.Wandering);
+
+            do
             {
-                var direction = new Vector2(Random.Range(-1f, 1f), Random.Range(-1f, 1f)).normalized;
-                var time = Random.Range(3f, 10f);
+                if (Random.value > 0.5f)
+                {
+                    var direction = new Vector2(Random.Range(-1f, 1f), Random.Range(-1f, 1f)).normalized;
+                    var time = Random.Range(3f, 10f);
+
+                    StartMove(direction);
+                    yield return new WaitForSeconds(3f);
+                    StopMove();
+                }
+            } while (_enemyState == EnemyState.Wandering);
+        }
+    }
+
+    private IEnumerator FollowTargetCourotine()
+    {
+        while (true)
+        {
+            yield return new WaitUntil(() => _enemyState == EnemyState.FollowToTarjet);
+            do
+            {
+                Vector3 direction = (_target.transform.position - transform.position).normalized;
 
                 StartMove(direction);
-                yield return new WaitForSeconds(3f);
-                StopMove();
-            }
+                // Hace que el objeto mire hacia el objetivo
+                //Vector3 direction = target.position - transform.position;
+                Quaternion rotation = Quaternion.LookRotation(direction);
+                transform.rotation = Quaternion.Lerp(transform.rotation, rotation, followSpeed * Time.deltaTime);
+                yield return null;
+            } while (_enemyState == EnemyState.FollowToTarjet);
+            StopMove();
         }
     }
 

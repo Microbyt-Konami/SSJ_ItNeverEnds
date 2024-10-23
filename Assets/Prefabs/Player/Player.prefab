@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 4865314942519193388}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -67,7 +67,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24c9bdb4d9bd7564a9f13f118d7fc92b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: {fileID: 0}
+  healthDisplay: {fileID: 1282130013435896870}
 --- !u!1001 &3577000955703394550
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -422,6 +422,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4c223aa936e77f341b120788de2aa7a8, type: 3}
+--- !u!114 &1282130013435896870 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7673992363235624462, guid: 4c223aa936e77f341b120788de2aa7a8, type: 3}
+  m_PrefabInstance: {fileID: 8913878278701244968}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36b271b60fd298b4cb4d81c6961627eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &5778894530328804674 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3136393082119708522, guid: 4c223aa936e77f341b120788de2aa7a8, type: 3}

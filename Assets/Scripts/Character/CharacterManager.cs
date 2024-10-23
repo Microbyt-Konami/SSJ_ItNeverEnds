@@ -6,5 +6,17 @@ using UnityEngine;
 [RequireComponent(typeof(CharacterHealth))]
 public class CharacterManager : MonoBehaviour
 {
-    [SerializeField] private CharacterHealth health;
+    [SerializeField] private protected HealthDisplay healthDisplay;
+
+    protected CharacterHealth health;
+
+    protected virtual void Awake()
+    {
+        health = GetComponent<CharacterHealth>();
+    }
+
+    protected virtual void Start()
+    {
+        healthDisplay.ShowDisplay(false);
+    }
 }
