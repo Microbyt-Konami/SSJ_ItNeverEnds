@@ -5,6 +5,7 @@ using UnityEngine.Windows;
 
 public enum EnemyState
 {
+    None,
     Idle,
     Wandering,
     FollowToTarjet,
@@ -55,8 +56,13 @@ public class EnemyController : MonoBehaviour
     [Tooltip("The radius of the grounded check. Should match the radius of the CharacterController")]
     public float GroundedRadius = 0.28f;
 
+    [Tooltip("The distance maximun follow to target")]
+    public float distanceFollowToTarget = 20;
+
     [Tooltip("What layers the character uses as ground")]
     public LayerMask GroundLayers;
+
+    [SerializeField] private EnemySensor _sensor;
 
     [Header("Debug")]
     [SerializeField] private EnemyState _enemyState = EnemyState.Idle;
@@ -129,22 +135,23 @@ public class EnemyController : MonoBehaviour
 
     private IEnumerator StatesCourotine()
     {
-        EnemyState enemyState = EnemyState.Idle;
+        EnemyState enemyState = EnemyState.None;
 
         while (true)
         {
-            yield return new WaitUntil(() => _enemyState != enemyState || (_controller.collisionFlags & CollisionFlags.Sides) != 0);
+            yield return new WaitUntil(() => _enemyState != enemyState);
 
-            if ((_controller.collisionFlags & CollisionFlags.Sides) != 0)
-            {
-                _enemyStateBeforeGetAroundObstacles = _enemyState;
-                _enemyState = EnemyState.GetAroundObstacles;
-            }
+            // if ((_controller.collisionFlags & CollisionFlags.Sides) != 0)
+            // {
+            //     _enemyStateBeforeGetAroundObstacles = _enemyState;
+            //     _enemyState = EnemyState.GetAroundObstacles;
+            // }
 
             enemyState = _enemyState;
             switch (enemyState)
             {
                 case EnemyState.Idle:
+                    yield return IdleCourotine();
                     break;
                 case EnemyState.Wandering:
                     yield return WanderingCourotine();
@@ -153,26 +160,57 @@ public class EnemyController : MonoBehaviour
                     yield return FollowTargetCourotine();
                     break;
                 case EnemyState.GetAroundObstacles:
-                    yield return GetAroundObstaclesCourotine();
+                    //yield return GetAroundObstaclesCourotine();
                     break;
             }
         }
     }
 
-    private IEnumerator WanderingCourotine()
+    private IEnumerator IdleCourotine()
     {
         do
         {
-            if (Random.value > 0.5f)
-            {
-                var direction = new Vector2(Random.Range(-1f, 1f), Random.Range(-1f, 1f)).normalized;
-                var time = Random.Range(3f, 10f);
+            UpdateStateFromSensors();
+            yield return new WaitForFixedUpdate();
+        } while (_enemyState == EnemyState.Idle);
+    }
 
-                StartMove(direction);
-                yield return new WaitForSeconds(3f);
+    private void UpdateStateFromSensors()
+    {
+        _sensor.UpdateSensors();
+        if (_sensor.IslookingPlayer)
+        {
+            _target = _sensor.Player;
+            _enemyState = EnemyState.FollowToTarjet;
+        }
+    }
+
+    private IEnumerator WanderingCourotine()
+    {
+        float currentTime = 0;
+        float time = 0;
+        do
+        {
+            UpdateStateFromSensors();
+
+            if (_enemyState != EnemyState.Wandering)
+                break;
+
+            if (currentTime <= 0)
+            {
+                if (Random.value > 0.5f)
+                {
+                    var direction = new Vector2(Random.Range(-1f, 1f), Random.Range(-1f, 1f)).normalized;
+                    currentTime = time = Random.Range(3f, 10f);
+
+                    StartMove(direction);
+                }
+                else
+                    StopMove();
             }
             else
-                StopMove();
+                currentTime -= Time.deltaTime;
+            yield return null;
         } while (_enemyState == EnemyState.Wandering);
         StopMove();
     }
@@ -181,13 +219,27 @@ public class EnemyController : MonoBehaviour
     {
         do
         {
-            Vector3 direction = (_target.transform.position - transform.position).normalized;
+            UpdateStateFromSensors();
+
+            if (_enemyState != EnemyState.FollowToTarjet)
+                break;
+
+            Vector3 v = _target.transform.position - transform.position;
+            Vector3 direction = v.normalized;
+            float distance = v.magnitude;
+
+            if (distance > distanceFollowToTarget)
+            {
+                _enemyState = EnemyState.Wandering;
+                break;
+            }
 
             StartMove(direction);
             // Hace que el objeto mire hacia el objetivo
             //Vector3 direction = target.position - transform.position;
-            Quaternion rotation = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.Lerp(transform.rotation, rotation, followSpeed * Time.deltaTime);
+            Quaternion rotation = Quaternion.LookRotation(v);
+            //transform.rotation = Quaternion.Lerp(transform.rotation, rotation, followSpeed * Time.deltaTime);
+            transform.rotation = rotation;
             yield return null;
         } while (_enemyState == EnemyState.FollowToTarjet);
         StopMove();
