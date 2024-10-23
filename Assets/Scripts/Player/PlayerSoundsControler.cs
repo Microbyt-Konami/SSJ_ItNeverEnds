@@ -6,23 +6,14 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(PlayerController))]
-[RequireComponent(typeof(AudioSource))]
-public class PlayerSoundsControler : MonoBehaviour
+public class PlayerSoundsControler : CharacterSounds
 {
-    [SerializeField] private AudioClip footWalkSound;
-    [SerializeField] private AudioClip footRunSound;
-    [SerializeField] private AudioClip footJumpSound;
-
     private PlayerController playerController;
-    private AudioSource audioSource;
-    private bool isStepSound, isJumpSound;
 
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         playerController = GetComponent<PlayerController>();
-        audioSource = GetComponent<AudioSource>();
-        audioSource.loop = false;
-        audioSource.playOnAwake = false;
     }
 
     private void OnEnable()
@@ -37,51 +28,10 @@ public class PlayerSoundsControler : MonoBehaviour
         playerController.OnJumpDone.RemoveListener(PlayJumpSound);
     }
 
-    private void PlayStepSound()
-    {
-        var clip = playerController.IsSprinting ? footRunSound : footWalkSound;
-
-        PlayFootSound(clip, true);
-    }
+    private void PlayStepSound() => PlayFootSound(() => PlayFootstep(playerController.IsSprinting), true);
 
     private void PlayJumpSound()
     {
-        PlayFootSound(footJumpSound, false);
-    }
-
-    private void PlayFootSound(AudioClip clip, bool isStep)
-    {
-        StartCoroutine(PlayFootSoundCoroutine(clip, isStep));
-    }
-
-    private IEnumerator PlayFootSoundCoroutine(AudioClip clip, bool isStep)
-    {
-        if (audioSource.isPlaying)
-        {
-            if (isStep)
-            {
-                if (isStepSound)
-                    yield break;
-            }
-            else
-            {
-                if (isJumpSound)
-                    yield break;
-            }
-
-            yield return new WaitUntil(() => !audioSource.isPlaying);
-        }
-
-        if (isStep)
-            isStepSound = true;
-        else
-            isJumpSound = true;
-        audioSource.clip = clip;
-        audioSource.Play();
-        yield return new WaitUntil(() => !audioSource.isPlaying);
-        if (isStep)
-            isStepSound = false;
-        else
-            isJumpSound = false;
+        PlayFootSound(PlayJump, false);
     }
 }

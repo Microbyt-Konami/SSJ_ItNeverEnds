@@ -14,7 +14,6 @@ namespace Synty.AnimationBaseLocomotion.Samples.InputSystem
 {
     public class InputReader : MonoBehaviour, Controls.IPlayerActions
     {
-        public bool noControls;
         public Vector2 _mouseDelta;
         public Vector2 _moveComposite;
 
@@ -43,9 +42,6 @@ namespace Synty.AnimationBaseLocomotion.Samples.InputSystem
         /// <inheritdoc cref="OnEnable" />
         private void OnEnable()
         {
-            if (noControls)
-                return;
-
             if (_controls == null)
             {
                 _controls = new Controls();
@@ -58,8 +54,7 @@ namespace Synty.AnimationBaseLocomotion.Samples.InputSystem
         /// <inheritdoc cref="OnDisable" />
         public void OnDisable()
         {
-            if (_controls != null)
-                _controls.Player.Disable();
+            _controls.Player.Disable();
         }
 
         /// <summary>
