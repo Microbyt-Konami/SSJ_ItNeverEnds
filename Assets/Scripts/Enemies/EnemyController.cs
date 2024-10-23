@@ -7,7 +7,8 @@ public enum EnemyState
 {
     Idle,
     Wandering,
-    FollowToTarjet
+    FollowToTarjet,
+    GetAroundObstacles
 }
 
 [RequireComponent(typeof(CharacterController))]
@@ -59,6 +60,7 @@ public class EnemyController : MonoBehaviour
 
     [Header("Debug")]
     [SerializeField] private EnemyState _enemyState = EnemyState.Idle;
+    [SerializeField] private EnemyState _enemyStateBeforeGetAroundObstacles;
     [SerializeField] private GameObject _target = null;
 
     // Enemy
@@ -112,58 +114,99 @@ public class EnemyController : MonoBehaviour
         _fallTimeoutDelta = FallTimeout;
 
         //StartCoroutine(WanderingCourotine());
-        _enemyState = EnemyState.FollowToTarjet;
-        _target = GameObject.FindGameObjectWithTag("Player");
-        StartCoroutine(FollowTargetCourotine());
+        //_enemyState = EnemyState.FollowToTarjet;
+        //_target = GameObject.FindGameObjectWithTag("Player");
+        //StartCoroutine(FollowTargetCourotine());
+        StartCoroutine(StatesCourotine());
     }
 
     private void Update()
     {
-        //_hasAnimator = TryGetComponent(out _animator);
         JumpAndGravity();
         GroundedCheck();
         Move();
     }
 
-    private IEnumerator WanderingCourotine()
+    private IEnumerator StatesCourotine()
     {
+        EnemyState enemyState = EnemyState.Idle;
+
         while (true)
         {
-            yield return new WaitUntil(() => _enemyState == EnemyState.Wandering);
+            yield return new WaitUntil(() => _enemyState != enemyState || (_controller.collisionFlags & CollisionFlags.Sides) != 0);
 
-            do
+            if ((_controller.collisionFlags & CollisionFlags.Sides) != 0)
             {
-                if (Random.value > 0.5f)
-                {
-                    var direction = new Vector2(Random.Range(-1f, 1f), Random.Range(-1f, 1f)).normalized;
-                    var time = Random.Range(3f, 10f);
+                _enemyStateBeforeGetAroundObstacles = _enemyState;
+                _enemyState = EnemyState.GetAroundObstacles;
+            }
 
-                    StartMove(direction);
-                    yield return new WaitForSeconds(3f);
-                    StopMove();
-                }
-            } while (_enemyState == EnemyState.Wandering);
+            enemyState = _enemyState;
+            switch (enemyState)
+            {
+                case EnemyState.Idle:
+                    break;
+                case EnemyState.Wandering:
+                    yield return WanderingCourotine();
+                    break;
+                case EnemyState.FollowToTarjet:
+                    yield return FollowTargetCourotine();
+                    break;
+                case EnemyState.GetAroundObstacles:
+                    yield return GetAroundObstaclesCourotine();
+                    break;
+            }
         }
+    }
+
+    private IEnumerator WanderingCourotine()
+    {
+        do
+        {
+            if (Random.value > 0.5f)
+            {
+                var direction = new Vector2(Random.Range(-1f, 1f), Random.Range(-1f, 1f)).normalized;
+                var time = Random.Range(3f, 10f);
+
+                StartMove(direction);
+                yield return new WaitForSeconds(3f);
+            }
+            else
+                StopMove();
+        } while (_enemyState == EnemyState.Wandering);
+        StopMove();
     }
 
     private IEnumerator FollowTargetCourotine()
     {
-        while (true)
+        do
         {
-            yield return new WaitUntil(() => _enemyState == EnemyState.FollowToTarjet);
-            do
-            {
-                Vector3 direction = (_target.transform.position - transform.position).normalized;
+            Vector3 direction = (_target.transform.position - transform.position).normalized;
 
-                StartMove(direction);
-                // Hace que el objeto mire hacia el objetivo
-                //Vector3 direction = target.position - transform.position;
-                Quaternion rotation = Quaternion.LookRotation(direction);
-                transform.rotation = Quaternion.Lerp(transform.rotation, rotation, followSpeed * Time.deltaTime);
-                yield return null;
-            } while (_enemyState == EnemyState.FollowToTarjet);
-            StopMove();
-        }
+            StartMove(direction);
+            // Hace que el objeto mire hacia el objetivo
+            //Vector3 direction = target.position - transform.position;
+            Quaternion rotation = Quaternion.LookRotation(direction);
+            transform.rotation = Quaternion.Lerp(transform.rotation, rotation, followSpeed * Time.deltaTime);
+            yield return null;
+        } while (_enemyState == EnemyState.FollowToTarjet);
+        StopMove();
+    }
+
+    private IEnumerator GetAroundObstaclesCourotine()
+    {
+        do
+        {
+            Quaternion rotation = transform.rotation;
+            Vector3 eulerAngles = rotation.eulerAngles;
+            Vector3 eulerAnglesNew = new Vector3(eulerAngles.x, eulerAngles.y + 90, eulerAngles.z);
+
+            transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(eulerAnglesNew), followSpeed * Time.deltaTime);
+            yield return new WaitForFixedUpdate();
+        } while (_enemyState == EnemyState.GetAroundObstacles || (_controller.collisionFlags & CollisionFlags.Sides) != 0);
+
+        _enemyState = _enemyStateBeforeGetAroundObstacles;
+        StopMove();
     }
 
     private void AssignAnimationIDs()
