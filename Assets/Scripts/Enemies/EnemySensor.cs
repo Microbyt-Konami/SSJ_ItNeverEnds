@@ -10,20 +10,25 @@ public class EnemySensor : MonoBehaviour
     [SerializeField] private float _distance = 1F;
     [SerializeField] private float _distanceLookPlayer = 10f;
     [SerializeField] private LayerMask _layerMask;
+    [field: SerializeField] public GameObject Player { get; private set; }
     [SerializeField] private LayerMask _lookPlayerLayerMask;
 
     [field: SerializeField, Header("Debug")] public bool IsCollised { get; private set; }
     [field: SerializeField] public bool IslookingPlayer { get; private set; }
-    [field: SerializeField] public GameObject Player { get; private set; }
+    [field: SerializeField] public bool IsDistanceToFollowPlayer { get; private set; }
 
     public void UpdateSensors()
     {
+        float distanceToPlayer = Player.transform.position.x - _eyeRayCastPost.position.x;
+
         IsCollised =
             Physics.Raycast(_eyeRayCastPost.position, _eyeRayCastPost.TransformDirection(Vector3.forward), _distance, _layerMask)
             || Physics.Raycast(_chestRayCastPost.position, _chestRayCastPost.TransformDirection(Vector3.forward), _distance, _layerMask)
             || Physics.Raycast(_footRayCastPost.position, _footRayCastPost.TransformDirection(Vector3.forward), _distance, _layerMask);
-        IslookingPlayer = Physics.Raycast(_eyeRayCastPost.position, _eyeRayCastPost.TransformDirection(Vector3.forward), out RaycastHit hit, _distanceLookPlayer, _lookPlayerLayerMask);
-        Player = IslookingPlayer ? Player = hit.collider.gameObject : null;
+        //IslookingPlayer = Physics.Raycast(_eyeRayCastPost.position, _eyeRayCastPost.TransformDirection(Vector3.forward), out RaycastHit hit, _distanceLookPlayer, _lookPlayerLayerMask);
+        //Player = IslookingPlayer ? Player = hit.collider.gameObject : null;
+        IsDistanceToFollowPlayer = distanceToPlayer <= _distanceLookPlayer;
+        IslookingPlayer = Physics.Raycast(_eyeRayCastPost.position, _eyeRayCastPost.TransformDirection(Vector3.forward), _distanceLookPlayer, _lookPlayerLayerMask);
     }
 
     void OnDrawGizmos()
