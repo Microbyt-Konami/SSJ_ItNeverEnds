@@ -25,7 +25,7 @@ public class EnemySensor : MonoBehaviour
             Physics.Raycast(_eyeRayCastPost.position, _eyeRayCastPost.TransformDirection(Vector3.forward), _distance, _layerMask)
             || Physics.Raycast(_chestRayCastPost.position, _chestRayCastPost.TransformDirection(Vector3.forward), _distance, _layerMask)
             || Physics.Raycast(_footRayCastPost.position, _footRayCastPost.TransformDirection(Vector3.forward), _distance, _layerMask);
-        //IslookingPlayer = Physics.Raycast(_eyeRayCastPost.position, _eyeRayCastPost.TransformDirection(Vector3.forward), out RaycastHit hit, _distanceLookPlayer, _lookPlayerLayerMask);
+        IslookingPlayer = Physics.Raycast(_eyeRayCastPost.position, _eyeRayCastPost.TransformDirection(Vector3.forward), out RaycastHit hit, _distanceLookPlayer, _lookPlayerLayerMask);
         //Player = IslookingPlayer ? Player = hit.collider.gameObject : null;
         IsDistanceToFollowPlayer = distanceToPlayer <= _distanceLookPlayer;
         IslookingPlayer = Physics.Raycast(_eyeRayCastPost.position, _eyeRayCastPost.TransformDirection(Vector3.forward), _distanceLookPlayer, _lookPlayerLayerMask);

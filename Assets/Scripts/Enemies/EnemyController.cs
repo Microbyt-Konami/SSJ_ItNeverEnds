@@ -8,11 +8,12 @@ public enum EnemyState
     Idle,
     Wandering,
     FollowToTarjet,
-    GetAroundObstacles
+    GetAroundObstacles,
+    ShootToTarjet
 }
 
 [RequireComponent(typeof(CharacterController))]
-public class EnemyController : MyCharacterController
+public class EnemyController : CharacterBaseController
 {
     [Header("Enemy")]
     [Tooltip("Move speed of the character in m/s")]
@@ -100,7 +101,7 @@ public class EnemyController : MyCharacterController
     private bool sprint;
     private bool analogMovement;
 
-    private void Awake()
+    protected override void Awake()
     {
         _animator = GetComponentInChildren<Animator>();
 
@@ -109,8 +110,10 @@ public class EnemyController : MyCharacterController
             _enemyObject = _animator.gameObject;
     }
 
-    private void Start()
+    protected override void Start()
     {
+        base.Start();
+
         Debug.Log($"{_hasAnimator} {_animator}");
         _controller = GetComponent<CharacterController>();
 
@@ -172,6 +175,9 @@ public class EnemyController : MyCharacterController
                 case EnemyState.GetAroundObstacles:
                     yield return GetAroundObstaclesCourotine();
                     break;
+                case EnemyState.ShootToTarjet:
+                    yield return ShootToTargetCourotine();
+                    break;
             }
         }
     }
@@ -199,6 +205,11 @@ public class EnemyController : MyCharacterController
         if (_sensor.IsCollised)
         {
             SetState(EnemyState.GetAroundObstacles);
+            updated = true;
+        }
+        if (_sensor.IsCollised)
+        {
+            SetState(EnemyState.ShootToTarjet);
             updated = true;
         }
 
@@ -302,6 +313,32 @@ public class EnemyController : MyCharacterController
             diffEulerY = eulerAnglesNew.y - transform.rotation.eulerAngles.y;
         } while (_enemyState == EnemyState.GetAroundObstacles);
         StopMove();
+    }
+
+    private IEnumerator ShootToTargetCourotine()
+    {
+        float time = 0;
+        do
+        {
+            var updatedState = UpdateStateFromSensors();
+
+            if (_enemyState != EnemyState.ShootToTarjet)
+                break;
+            else if (!updatedState)
+            {
+                SetState(EnemyState.Wandering);
+                break;
+            }
+
+            if (time <= 0)
+            {
+                Shoot();
+                time = _timeMovement;
+            }
+            else
+                time -= Time.deltaTime;
+            yield return new WaitForFixedUpdate();
+        } while (_enemyState == EnemyState.ShootToTarjet);
     }
 
     private void AssignAnimationIDs()

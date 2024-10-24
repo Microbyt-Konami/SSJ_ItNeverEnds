@@ -120,8 +120,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2baa1ec3e3a5de44ab74b17a81d06bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rayPoint: {fileID: 0}
-  weapon: {fileID: 1474441880697978670}
+  rayPoint: {fileID: 1474441880697978670}
+  weapon: {fileID: 0}
   ballFire: {fileID: 1240339388954571284, guid: 1f06435877d0e20408f91c22a4145ffe, type: 3}
 --- !u!1 &8888184927802320171
 GameObject:
@@ -148,7 +148,7 @@ Transform:
   m_GameObject: {fileID: 8888184927802320171}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: 1.5880146e-15, w: 1}
-  m_LocalPosition: {x: -0.0061, y: 1.1623, z: -0.1502}
+  m_LocalPosition: {x: -0.00000011920929, y: 1.322, z: -0.06955223}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

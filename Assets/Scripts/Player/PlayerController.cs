@@ -12,7 +12,7 @@ using UnityEngine.Events;
 
 namespace Synty.AnimationBaseLocomotion.Samples
 {
-    public class PlayerController : MyCharacterController
+    public class PlayerController : CharacterBaseController
     {
         #region Enum
 
@@ -354,8 +354,10 @@ namespace Synty.AnimationBaseLocomotion.Samples
         #region Start
 
         /// <inheritdoc cref="Start" />
-        private void Start()
+        protected override void Start()
         {
+            base.Start();
+
             _targetLockOnPos = transform.Find("TargetLockOnPos");
 
             //_inputReader.onLockOnToggled += ToggleLockOn;
@@ -366,6 +368,7 @@ namespace Synty.AnimationBaseLocomotion.Samples
             _inputReader.onCrouchDeactivated += DeactivateCrouch;
             //_inputReader.onAimActivated += ActivateAim;
             //_inputReader.onAimDeactivated += DeactivateAim;
+            _inputReader.onShootPerformed += Shoot;
 
             _isStrafing = _alwaysStrafe;
 
